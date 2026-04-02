@@ -2,7 +2,7 @@ import { _decorator, Component, Node, Vec3, UITransform, view } from 'cc';
 const { ccclass, property } = _decorator;
 
 /**
- * 背景滚动脚本：通过两个背景图交替循环，实现无限滚动的视觉效果（像坦克大战或雷霆战机那样）
+ * 背景滚动脚本：通过两个背景图交替循环，实现无限滚动的视觉效果
  */
 @ccclass('ScrollingBackground')
 export class ScrollingBackground extends Component {
@@ -18,19 +18,28 @@ export class ScrollingBackground extends Component {
     @property
     public speed: number = 100;
 
-    // 记录背景图片的单张高度，用于计算循环点
+    // 记录背景图片的显示高度
     private _height: number = 0;
 
     start() {
-        // 获取图片的宽高度属性（Cocos 3.x 使用 UITransform 组件管理 UI 尺寸）
-        const transform = this.bg1.getComponent(UITransform);
-        if (transform) {
-            this._height = transform.contentSize.height;
-        } else {
-            // 如果没拿到，就用窗口高度兜底
-            this._height = view.getVisibleSize().height;
-        }
+        // ===== 核心修复：将背景图拉伸到铺满整个屏幕 =====
+        const winSize = view.getVisibleSize();
         
+        // 设置 BG1 的大小等于屏幕大小
+        const transform1 = this.bg1.getComponent(UITransform);
+        if (transform1) {
+            transform1.setContentSize(winSize.width, winSize.height);
+        }
+
+        // 设置 BG2 的大小等于屏幕大小
+        const transform2 = this.bg2.getComponent(UITransform);
+        if (transform2) {
+            transform2.setContentSize(winSize.width, winSize.height);
+        }
+
+        // 使用屏幕高度作为循环高度
+        this._height = winSize.height;
+
         // 初始化背景位置：bg1 在中心，bg2 紧贴在 bg1 的正上方
         this.bg1.setPosition(0, 0);
         this.bg2.setPosition(0, this._height);
@@ -44,8 +53,7 @@ export class ScrollingBackground extends Component {
         this.bg1.setPosition(0, y1);
         this.bg2.setPosition(0, y2);
 
-        // 循环逻辑：
-        // 当某张背景图完全飞出屏幕下边缘（y <= -高度）时，将其瞬间挪到另一张图的顶部，实现无缝衔接
+        // 循环逻辑：背景图完全飞出屏幕下边缘时，移到另一张图的上方
         if (this.bg1.position.y <= -this._height) {
             this.bg1.setPosition(0, this.bg2.position.y + this._height);
         }
